@@ -10,10 +10,10 @@ defaultEntryPoints = ["http", "https"]
     [entryPoints.https.tls]
 
 [acme]
-email = @email@
+email = "@email@"
 storageFile = "acme.json"
-onDemand = true
-caServer = "https://acme-staging.api.letsencrypt.org/directory"
+#onDemand = true
+#caServer = "https://acme-staging.api.letsencrypt.org/directory"
 entryPoint = "https"
 [[acme.domains]]
-   main = @hostname@
+   main = "@hostname@"
