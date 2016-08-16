@@ -26,11 +26,17 @@ services:
             - "/var/run/docker.sock:/tmp/docker.sock"
         volumes_from: 
             - "dbmaster"
+    appconfig:
+        build: ./apps/appconfig
+        environment:
+            TGWEBHOOK: @webhook@
+            TGTOKEN: @token@
+            LOGLEVEL: debug
     httplistener:
         build: ./apps/httplistener
         labels:
             - "traefik.backend=httplistener"
-            - "traefik.frontend.rule=Host:@entrypoint@.@domain@"
+            - "traefik.frontend.rule=Host:@hostname@"
         links:
             - msgsys
         environment:
@@ -39,7 +45,6 @@ services:
             LOGLEVEL: info
             LISTENADDR: ":80"
             PUBNAME: httprequest
-            WEBHOOK_HOSTNAME: @entrypoint@.@domain@
     msgsys:
         image: nats
         container_name: 'msgsys'
@@ -53,4 +58,4 @@ services:
             CLIENTID: appworker
             LOGLEVEL: info
             SUBNAME: httprequest
-            TGTOKEN: "your telegram token"
+            TGTOKEN: @token@
