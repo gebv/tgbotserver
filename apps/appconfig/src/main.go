@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -35,7 +36,7 @@ func main() {
 		"logLevel": logLevelStr,
 		"webhook":  webhook,
 		"tgtoken":  len(token),
-	}).Infoln("httplistener init")
+	}).Infoln("appconfig init")
 
 	if err := setWebhook(token, webhook); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -88,14 +89,27 @@ func setWebhook(token, webhook string) error {
 	}
 	defer resp.Body.Close()
 
+	bytes, _ := ioutil.ReadAll(resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
+
+		logrus.WithFields(logrus.Fields{
+			"_ref":        NAME,
+			"err":         err,
+			"url_request": api.String(),
+			"body":        string(bytes),
+			"webhook":     webhook,
+			"status":      resp.Status,
+		}).Error("fail updated webhook")
 
 		return err
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"_ref": NAME,
-		"err":  err,
+		"_ref":        NAME,
+		"webhook":     webhook,
+		"url_request": api.String(),
+		"body":        string(bytes),
 	}).Info("successfully updated webhook")
 
 	return nil

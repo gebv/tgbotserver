@@ -31,7 +31,7 @@ services:
         environment:
             TGWEBHOOK: @webhook@
             TGTOKEN: @token@
-            LOGLEVEL: debug
+            LOGLEVEL: info
     httplistener:
         build: ./apps/httplistener
         labels:
