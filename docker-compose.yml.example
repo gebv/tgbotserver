@@ -1,0 +1,56 @@
+version: "2"
+services:
+    reverseproxy:
+        image: traefik
+        command: --web --docker --docker.domain=@domain@ --logLevel=ERROR
+        ports:
+            - "80:80"
+            - "433:433"
+            - "8089:8080"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - /dev/null:/traefik.toml
+    dbmaster:
+        container_name: 'citus_master'
+        image: 'citusdata/citus:5.1.1'
+        labels: 
+            - "com.citusdata.role=Master"
+    dbworker:
+        image: 'citusdata/citus:5.1.1'
+        labels: 
+            - "com.citusdata.role=Worker"
+    dbconfig:
+        container_name: 'citus_config'
+        image: 'citusdata/workerlist-gen:0.9.0'
+        volumes: 
+            - "/var/run/docker.sock:/tmp/docker.sock"
+        volumes_from: 
+            - "dbmaster"
+    httplistener:
+        build: ./apps/httplistener
+        labels:
+            - "traefik.backend=httplistener"
+            - "traefik.frontend.rule=Host:@entrypoint@.@domain@"
+        links:
+            - msgsys
+        environment:
+            NATSADDR: "nats://msgsys:4233"
+            CLIENTID: httplistener
+            LOGLEVEL: info
+            LISTENADDR: ":80"
+            PUBNAME: httprequest
+            WEBHOOK_HOSTNAME: @entrypoint@.@domain@
+    msgsys:
+        image: nats
+        container_name: 'msgsys'
+        command: -p 4233
+    appworker:
+        build: ./apps/appworker
+        links:
+            - msgsys
+        environment:
+            NATSADDR: "nats://msgsys:4233"
+            CLIENTID: appworker
+            LOGLEVEL: info
+            SUBNAME: httprequest
+            TGTOKEN: "your telegram token"
