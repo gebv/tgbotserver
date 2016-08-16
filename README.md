@@ -15,11 +15,12 @@ Supported scaling
 For generate `docker-compose.yml` file use the script, follow command:
 
 ```
-./gen_docker-compose.py 1234:ABCD "https://sub1.sub2.domain.com/path1/path2/webhook"
+./gen_docker-compose.py 1234:ABCD "https://sub1.sub2.domain.com/path1/path2/webhook" your@email.com
 ```
 
 * First argument it is token of telegram bot. 
 * Second argument it is your webhook url. 
+* Third argument - email to generate ssl ([letsencrypt.org](https://letsencrypt.org))
 
 # Run
 

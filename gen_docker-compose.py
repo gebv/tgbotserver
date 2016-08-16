@@ -8,6 +8,7 @@ argv = sys.argv
 
 token = argv[1]
 webhook = argv[2]
+email = argv[3]
 
 result = urlparse(webhook)
 
@@ -25,4 +26,9 @@ with open("docker-compose.yml", "wt") as fout:
                 .replace('@webhook@', webhook)
                 .replace('@hostname@', hostname)
                 .replace('@token@', token))
+with open("apps/reverseproxy/config.toml", "wt") as fout:
+    with open("apps/reverseproxy/config.toml.example", "rt") as fin:
+        for line in fin:
+            fout.write(line.replace('@email@', email)
+                .replace('@hostname@', hostname))
             
