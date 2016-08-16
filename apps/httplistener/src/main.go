@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/signal"
+	"syscall"
 
 	"os"
 
@@ -108,14 +109,17 @@ func main() {
 		}
 	}()
 
-	// Wait for a SIGINT (perhaps triggered by user with CTRL-C)
-	// Run cleanup when signal is received
-	signalChan := make(chan os.Signal, 1)
+	signalChan := make(chan os.Signal, 2)
 	done := make(chan bool)
-	signal.Notify(signalChan, os.Interrupt)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		<-signalChan
+		logrus.WithFields(logrus.Fields{
+			"_ref":  NAME,
+			"_host": hostname,
+		}).Info("signal completion of the process")
+
 		nc.Close()
 		done <- true
 	}()

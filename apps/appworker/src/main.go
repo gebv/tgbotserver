@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/nats-io/nats"
@@ -79,14 +80,18 @@ func main() {
 		}).Fatal("Subscribe")
 	}
 
-	// Wait for a SIGINT (perhaps triggered by user with CTRL-C)
-	// Run cleanup when signal is received
-	signalChan := make(chan os.Signal, 1)
+	signalChan := make(chan os.Signal, 2)
 	done := make(chan bool)
-	signal.Notify(signalChan, os.Interrupt)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		<-signalChan
+
+		logrus.WithFields(logrus.Fields{
+			"_ref":  NAME,
+			"_host": hostname,
+		}).Info("signal completion of the process")
+
 		sub.Unsubscribe()
 		nc.Close()
 		done <- true
