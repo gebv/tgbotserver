@@ -1,3 +1,4 @@
 docker-compose.yml
 config.toml
 _main.go
+_*
