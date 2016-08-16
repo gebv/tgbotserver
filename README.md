@@ -1,6 +1,7 @@
 # tgbotserver
 
-[![license](https://img.shields.io/github/license/gebv/tgbotserver.svg?maxAge=2592000)]()
+[![license](https://img.shields.io/github/license/gebv/tgbotserver.svg)]()
+[![status](https://img.shields.io/badge/status-development-blue.svg)]()
 
 Ready to use server for your telegram bot
 Supported scaling
@@ -11,14 +12,14 @@ Supported scaling
 
 # Configuration
 
-Build `docker-compose.yml` file.
-For build `docker-compose.yml` file use the script, follow command:
+For generate `docker-compose.yml` file use the script, follow command:
+
 ```
-./builddc.sh domain_name subdomain_name
+./gen_docker-compose.py 1234:ABCD "https://sub1.sub2.domain.com/path1/path2/webhook"
 ```
 
-First argument it is host name of your server.
-Second argument it is subdomain name - entrypoint for webhook for telegram bot.
+* First argument it is token of telegram bot. 
+* Second argument it is your webhook url. 
 
 # Run
 
