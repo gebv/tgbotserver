@@ -6,39 +6,128 @@
 Ready to use server for your telegram bot
 Supported scaling
 
+* [Quick start](#quick-start)
 * [Configuration](#configuration)
 * [Run](#run)
-* [Overview](#overview)
+ * [mode 1 - request updates](#request-updates)
+ * [mode 2 - receive updates](#receive-updates)
+* [Libraries](#libraries)
+
+# Quick start
+
+`TGBS_TOKEN` requeired. `APP_EMAIL`  and `TGBS_WEBHOOK` optional if not use webhook.
+
+``` bash
+cat <<EOT >> env
+export APP_EMAIL="myemail@mydomain.com"
+export TGBS_TOKEN="123456789:ABCDEFG............................"
+export TGBS_WEBHOOK="https://mydomain.com/"
+export APP_LOGLEVEL="level"
+EOT
+source ./env
+./gen_docker-compose.py
+# Generation...
+# Done for 'docker-compose.yml'.
+# Done for 'apps/reverseproxy/config.toml'.
+# OK.
+
+docker-compose up -d dbconfig pump appworker
+# Creating network "tgbotserver_default" with the default driver
+# Creating msgsys
+# Creating citus_master
+# Creating tgbotserver_pump_1
+# Creating tgbotserver_appworker_1
+# Creating citus_config
+
+# if use webhook
+docker-compose up -d reverseproxy dbconfig appconfig appworker httplistener
+```
 
 # Configuration
 
-For generate `docker-compose.yml` file use the script, follow command:
+* `gen_docker-compose.py` - generator settings from the `env`
+* `env` - your settings
+* `env.example` - template settings
+* `docker-compose.yml.example` - template for docker-compose file
+* `apps/reverseproxy/config.toml.example` - template for traefik settings
+
+
+``` bash
+cp env.example env
+```
+
+Use the file to enter your settings.
+* **APP_EMAIL** - email for feedback to generate ssl ([letsencrypt.org](https://letsencrypt.org))
+* **TGBS_TOKEN** - telegram bot token ([crate new bot](https://core.telegram.org/bots#create-a-new-bot))
+* **TGBS_WEBHOOK** - your webhook url ([set webhook,lo](https://core.telegram.org/bots/api#setwebhook))
+
+Update the environment variables and to generate a settings.
 
 ```
-./gen_docker-compose.py 1234:ABCD "https://sub1.sub2.domain.com/path1/path2/webhook" your@email.com
+source ./env
+./gen_docker-compose.py
 ```
-
-* First argument it is token of telegram bot. 
-* Second argument it is your webhook url. 
-* Third argument - email to generate ssl ([letsencrypt.org](https://letsencrypt.org))
 
 # Run
 
+Services
+* **reverseproxy** - 
+* **dbmaster**, **dbconfig**, **dbworker** - database
+* **appconfig** - customize application (only if use webhook)
+* **httplistener** - query processor from telegram
+* **pump** - loader updates (only if not use webhook)
+* **msgsys** - service messages
+* **appworker** - application logic
+
+## Request updates
+
+If you do not have their own domain or for development on local machine should request updates.
+
 ``` bash
+##################
 # run server
-docker-compose up -d
+##################
+
+docker-compose up -d dbconfig pump appworker
+
+##################
+# if required.
+##################
 
 # application scaling
-docker-compose scale appworker=5
-
-# scaling listener
-docker-compose scale httplistener=10
+# docker-compose scale appworker=5
 
 # scaling database
-docker-compose scale dbworker=3
+# docker-compose scale dbworker=3
 ```
 
-# Overview
+## Receive updates
+
+For production it is recommended to receive update via webhook.
+
+``` bash
+##################
+# run server
+##################
+
+docker-compose up -d reverseproxy dbconfig appconfig appworker httplistener
+
+##################
+# if required.
+##################
+
+# application scaling
+# docker-compose scale appworker=5
+
+# scaling database
+# docker-compose scale dbworker=3
+
+# scaling listener
+# docker-compose scale httplistener=10
+```
+
+
+# Libraries
 
 * [docker](https://github.com/docker/docker) - container engine
 * [traefik](https://github.com/containous/traefik) - reverse proxy
@@ -56,4 +145,5 @@ curl -XPOST -H Host:subdomain.domain.com http://127.0.0.1 -d "payload"
 ## TODO
 
 [x] scaling
+
 [ ] centralized logging 

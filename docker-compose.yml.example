@@ -31,7 +31,7 @@ services:
         environment:
             TGWEBHOOK: @webhook@
             TGTOKEN: @token@
-            LOGLEVEL: info
+            LOGLEVEL: @appLogLevel@
     httplistener:
         build: ./apps/httplistener
         labels:
@@ -42,9 +42,19 @@ services:
         environment:
             NATSADDR: "nats://msgsys:4233"
             CLIENTID: httplistener
-            LOGLEVEL: info
+            LOGLEVEL: @appLogLevel@
             LISTENADDR: ":80"
-            PUBNAME: httprequest
+            PUBNAME: channel1
+    pump:
+        build: ./apps/pump
+        links:
+            - msgsys
+        environment:
+            NATSADDR: "nats://msgsys:4233"
+            CLIENTID: pump
+            LOGLEVEL: @appLogLevel@
+            PUBNAME: channel1
+            TGTOKEN: @token@
     msgsys:
         image: nats
         container_name: 'msgsys'
@@ -56,6 +66,6 @@ services:
         environment:
             NATSADDR: "nats://msgsys:4233"
             CLIENTID: appworker
-            LOGLEVEL: info
-            SUBNAME: httprequest
+            LOGLEVEL: @appLogLevel@
+            SUBNAME: channel1
             TGTOKEN: @token@
