@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -74,14 +76,14 @@ func main() {
 		bot.Debug = true
 	}
 
-	cfg := tgbotapi.NewUpdate(0)
+	cfg := tgbotapi.NewUpdate(0) // TODO: save last updateID
 	cfg.Timeout = 60
 
 	go func() {
 		for {
 			select {
 			case <-time.After(time.Millisecond * 1):
-				if err := getUpdates(nc, pubname, tgToken); err != nil {
+				if err := getUpdates(nc, &cfg, pubname, tgToken); err != nil {
 					logrus.WithError(err).Error("request get updates, invalid status")
 					time.Sleep(time.Second * 3)
 				}
@@ -108,7 +110,7 @@ func main() {
 	os.Exit(0)
 }
 
-func getUpdates(nc *nats.Conn, pubname, token string) error {
+func getUpdates(nc *nats.Conn, cfg *tgbotapi.UpdateConfig, pubname, token string) error {
 	var countRetry = 0
 	var maxNumberAttempts = 5
 
@@ -119,7 +121,20 @@ RETRY:
 
 	apiurl := fmt.Sprintf(APIEntrypoint, token, "getUpdates")
 
-	req, err := http.NewRequest("POST", apiurl, nil)
+	api, err := url.Parse(apiurl)
+	query := api.Query()
+	if cfg.Offset != 0 {
+		query.Add("offset", strconv.Itoa(cfg.Offset))
+	}
+	if cfg.Limit > 0 {
+		query.Add("limit", strconv.Itoa(cfg.Limit))
+	}
+	if cfg.Timeout > 0 {
+		query.Add("timeout", strconv.Itoa(cfg.Timeout))
+	}
+	api.RawQuery = query.Encode()
+
+	req, err := http.NewRequest("POST", api.String(), nil)
 	req.Header.Set("Content-Type", "application/json")
 
 	// TODO: reuse http client
@@ -150,22 +165,47 @@ RETRY:
 
 	bytes, _ := ioutil.ReadAll(resp.Body)
 
-	updates := []json.RawMessage{}
+	updates := struct {
+		Result []json.RawMessage `json:"result"`
+	}{}
 	json.Unmarshal(bytes, &updates)
 
-	for _, update := range updates {
-		if err := nc.Publish(pubname, update); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"_ref": NAME,
+	logrus.WithFields(logrus.Fields{
+		"_ref": NAME,
+		"data": string(bytes),
+	}).Debug("get update")
 
-				"err": err,
-			}).Error("publish")
+	for _, update := range updates.Result {
+		updateID := getUpdateID(update)
+
+		if updateID >= cfg.Offset {
+			cfg.Offset = updateID + 1
+
+			if err := nc.Publish(pubname, update); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"_ref": NAME,
+					"err":  err,
+				}).Error("publish")
+			}
 		}
 
+		logrus.WithFields(logrus.Fields{
+			"_ref": NAME,
+		}).Debug("published")
+
 		// TODO: if invalid connection then complete the procedure
+
 	}
 
 	// TODO: if error then to save the not processed messages
 
 	return nil
+}
+
+func getUpdateID(raw []byte) int {
+	v := struct {
+		UpdateID int `json:"update_id"`
+	}{}
+	json.Unmarshal(raw, &v)
+	return v.UpdateID
 }
