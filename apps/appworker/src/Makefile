@@ -7,5 +7,5 @@ testwithrace:
 .PHONY: testwithraced
 
 build:
-	CGO_ENABLED=0 go build -o appworker -v -a --installsuffix cgo -ldflags "-s" main.go
+	GOPATH=${GOPATH}:${PWD}/.. CGO_ENABLED=0 go build -o appworker -v -a --installsuffix cgo -ldflags "-s" main.go db.go handler.go 
 .PHONY: build
