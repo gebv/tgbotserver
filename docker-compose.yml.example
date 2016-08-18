@@ -10,22 +10,11 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - ./apps/reverseproxy/config.toml:/traefik.toml
-    dbmaster:
-        container_name: 'citus_master'
-        image: 'citusdata/citus:5.1.1'
-        labels: 
-            - "com.citusdata.role=Master"
-    dbworker:
-        image: 'citusdata/citus:5.1.1'
-        labels: 
-            - "com.citusdata.role=Worker"
-    dbconfig:
-        container_name: 'citus_config'
-        image: 'citusdata/workerlist-gen:0.9.0'
-        volumes: 
-            - "/var/run/docker.sock:/tmp/docker.sock"
-        volumes_from: 
-            - "dbmaster"
+    database:
+        container_name: 'database'
+        image: 'sameersbn/postgresql:9.4-24'
+        volumes:
+            - ./apps/db/state:/var/lib/postgresql
     appconfig:
         build: ./apps/appconfig
         environment:
@@ -63,9 +52,16 @@ services:
         build: ./apps/appworker
         links:
             - msgsys
+            - database
+        volumes_from:
+            - "database"
         environment:
             NATSADDR: "nats://msgsys:4233"
             CLIENTID: appworker
             LOGLEVEL: @appLogLevel@
             SUBNAME: channel1
             TGTOKEN: @token@
+            DBADDR: "database:5432"
+            DBNAME: app
+            DBUSER: app
+            DBPASS: apppassword
