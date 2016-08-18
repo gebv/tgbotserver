@@ -31,16 +31,15 @@ source ./env
 # Done for 'apps/reverseproxy/config.toml'.
 # OK.
 
-docker-compose up -d dbconfig pump appworker
+docker-compose up -d pump appworker
 # Creating network "tgbotserver_default" with the default driver
 # Creating msgsys
-# Creating citus_master
+# Creating database
 # Creating tgbotserver_pump_1
 # Creating tgbotserver_appworker_1
-# Creating citus_config
 
 # if use webhook
-docker-compose up -d reverseproxy dbconfig appconfig appworker httplistener
+docker-compose up -d reverseproxy appconfig appworker httplistener
 ```
 
 # Configuration
@@ -71,8 +70,8 @@ source ./env
 # Run
 
 Services
-* **reverseproxy** - 
-* **dbmaster**, **dbconfig**, **dbworker** - database
+* **reverseproxy** - reverse proxy
+* **database** - database
 * **appconfig** - customize application (only if use webhook)
 * **httplistener** - query processor from telegram
 * **pump** - loader updates (only if not use webhook)
@@ -88,7 +87,7 @@ If you do not have their own domain or for development on local machine should r
 # run server
 ##################
 
-docker-compose up -d dbconfig pump appworker
+docker-compose up -d pump appworker
 
 ##################
 # if required.
@@ -96,9 +95,6 @@ docker-compose up -d dbconfig pump appworker
 
 # application scaling
 # docker-compose scale appworker=5
-
-# scaling database
-# docker-compose scale dbworker=3
 ```
 
 ## Receive updates
@@ -110,7 +106,7 @@ For production it is recommended to receive update via webhook.
 # run server
 ##################
 
-docker-compose up -d reverseproxy dbconfig appconfig appworker httplistener
+docker-compose up -d reverseproxy appconfig appworker httplistener
 
 ##################
 # if required.
@@ -118,9 +114,6 @@ docker-compose up -d reverseproxy dbconfig appconfig appworker httplistener
 
 # application scaling
 # docker-compose scale appworker=5
-
-# scaling database
-# docker-compose scale dbworker=3
 
 # scaling listener
 # docker-compose scale httplistener=10
@@ -143,7 +136,5 @@ curl -XPOST -H Host:subdomain.domain.com http://127.0.0.1 -d "payload"
 ```
 
 ## TODO
-
-[x] scaling
 
 [ ] centralized logging 
