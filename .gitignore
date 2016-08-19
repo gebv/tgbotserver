@@ -2,4 +2,3 @@ docker-compose.yml
 config.toml
 env
 _*
-apps/db/state

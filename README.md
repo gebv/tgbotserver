@@ -31,15 +31,32 @@ source ./env
 # Done for 'apps/reverseproxy/config.toml'.
 # OK.
 
-docker-compose up -d pump appworker
+# Next
+# 1. if use pumper (suited for development and experimentation)
+# 2. if use webhook (is better suited to production)
+
+# ---------------------------------
+# 1. If use pumper
+# ---------------------------------
+docker-compose up -d pumper database
 # Creating network "tgbotserver_default" with the default driver
 # Creating msgsys
 # Creating database
-# Creating tgbotserver_pump_1
-# Creating tgbotserver_appworker_1
+# Creating telegramapi_pumper
 
-# if use webhook
-docker-compose up -d reverseproxy appconfig appworker httplistener
+# to wait for database startup
+docker-compose up -d worker
+# Creating telegramapi_worker_1
+
+# Done. Bot ready
+
+
+# ---------------------------------
+# 2. If use webhook
+# ---------------------------------
+docker-compose up -d reverseproxy tuner database listener
+# to wait for database startup
+docker-compose up -d worker
 ```
 
 # Configuration
@@ -48,7 +65,7 @@ docker-compose up -d reverseproxy appconfig appworker httplistener
 * `env` - your settings
 * `env.example` - template settings
 * `docker-compose.yml.example` - template for docker-compose file
-* `apps/reverseproxy/config.toml.example` - template for traefik settings
+* `images/reverseproxy/config.toml.example` - template for traefik settings
 
 
 ``` bash
@@ -87,14 +104,16 @@ If you do not have their own domain or for development on local machine should r
 # run server
 ##################
 
-docker-compose up -d pump appworker
+docker-compose up -d pumper database
+# to wait for database startup
+docker-compose up -d worker
 
 ##################
 # if required.
 ##################
 
 # application scaling
-# docker-compose scale appworker=5
+# docker-compose scale worker=5
 ```
 
 ## Receive updates
@@ -106,17 +125,19 @@ For production it is recommended to receive update via webhook.
 # run server
 ##################
 
-docker-compose up -d reverseproxy appconfig appworker httplistener
+docker-compose up -d reverseproxy listener tuner database
+# to wait for database startup
+docker-compose up -d worker
 
 ##################
 # if required.
 ##################
 
 # application scaling
-# docker-compose scale appworker=5
+# docker-compose scale worker=5
 
 # scaling listener
-# docker-compose scale httplistener=10
+# docker-compose scale listener=10
 ```
 
 
@@ -138,3 +159,4 @@ curl -XPOST -H Host:subdomain.domain.com http://127.0.0.1 -d "payload"
 ## TODO
 
 [ ] centralized logging 
+[ ] run listener and workers for different needs (for different applications, dynamic name of channels, etc)

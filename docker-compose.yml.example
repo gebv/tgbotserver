@@ -9,59 +9,53 @@ services:
             - "8089:8080"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - ./apps/reverseproxy/config.toml:/traefik.toml
+            - ./images/reverseproxy/config.toml:/traefik.toml
     database:
         container_name: 'database'
         image: 'sameersbn/postgresql:9.4-24'
         volumes:
-            - ./apps/db/state:/var/lib/postgresql
-    appconfig:
-        build: ./apps/appconfig
+            - ./images/database/_state:/var/lib/postgresql
+    worker:
+        build: ./src/worker
+        links:
+            - msgsys
+            - database
         environment:
-            TGWEBHOOK: @webhook@
-            TGTOKEN: @token@
+            APPNAME: "tgBotWorker"
+            NATSADDR: "nats://msgsys:4233"
             LOGLEVEL: @appLogLevel@
-    httplistener:
-        build: ./apps/httplistener
+            SUBNAME: tgupdate
+            TG_TOKEN: @token@
+            DB_ADDR: "database:5432"
+            DB_NAME: app
+            DB_USER: app
+            DB_PASS: apppassword
+    listener:
+        build: ./src/listener
         labels:
             - "traefik.backend=httplistener"
             - "traefik.frontend.rule=Host:@hostname@"
         links:
             - msgsys
         environment:
+            APPNAME: "httpTgUpdateListener"
             NATSADDR: "nats://msgsys:4233"
-            CLIENTID: httplistener
             LOGLEVEL: @appLogLevel@
             LISTENADDR: ":80"
-            PUBNAME: channel1
-    pump:
-        build: ./apps/pump
+            PUBNAME: tgupdate
+    pumper:
+        build: ./src/pumper
+        container_name: "telegramapi_pumper"
         links:
             - msgsys
         environment:
+            APPNAME: "tgUpdatePumper"
             NATSADDR: "nats://msgsys:4233"
-            CLIENTID: pump
             LOGLEVEL: @appLogLevel@
-            PUBNAME: channel1
-            TGTOKEN: @token@
+            PUBNAME: tgupdate
+            PUMPPERIODMS: 100
+            TG_TOKEN: @token@
     msgsys:
         image: nats
         container_name: 'msgsys'
         command: -p 4233
-    appworker:
-        build: ./apps/appworker
-        links:
-            - msgsys
-            - database
-        volumes_from:
-            - "database"
-        environment:
-            NATSADDR: "nats://msgsys:4233"
-            CLIENTID: appworker
-            LOGLEVEL: @appLogLevel@
-            SUBNAME: channel1
-            TGTOKEN: @token@
-            DBADDR: "database:5432"
-            DBNAME: app
-            DBUSER: app
-            DBPASS: apppassword

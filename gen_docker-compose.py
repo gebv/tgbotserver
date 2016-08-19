@@ -30,11 +30,11 @@ with open("docker-compose.yml", "wt") as fout:
                 .replace('@appLogLevel@', loglevel))
 print("Done for 'docker-compose.yml'.")
 
-with open("apps/reverseproxy/config.toml", "wt") as fout:
-    with open("apps/reverseproxy/config.toml.example", "rt") as fin:
+with open("images/reverseproxy/config.toml", "wt") as fout:
+    with open("images/reverseproxy/config.toml.example", "rt") as fin:
         for line in fin:
             fout.write(line.replace('@email@', email)
                 .replace('@hostname@', hostname))
-print("Done for 'apps/reverseproxy/config.toml'.")
+print("Done for 'images/reverseproxy/config.toml'.")
 print("OK.")
             
